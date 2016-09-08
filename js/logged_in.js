@@ -1,6 +1,5 @@
 var firebase = require('firebase');
-import { rootRef, firebase_init } from '../firebase_config.js';
-//var ref = require('./app.js')
+import { rootRef, firebase_init } from './firebase_config.js';
 //var usersRef = ref.orderByChild("/users/");
 
       function pullFromDB(){
@@ -52,14 +51,5 @@ import { rootRef, firebase_init } from '../firebase_config.js';
      }
 
 
-    function writeUserData(name, useruid, username, gender, liked, not_liked){
-      firebase.database().ref('/users/' + name).set({
-        username: username,
-        name: name,
-        useruid: useruid,
-        gender: gender,
-        liked: 'liked',
-        not_liked: 'liked'
-      });
-    }
+
 document.addEventListener("DOMContentLoaded", false);

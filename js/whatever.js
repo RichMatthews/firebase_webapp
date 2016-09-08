@@ -1,5 +1,4 @@
 var firebase = require('firebase');
-// var ref = require('./app.js')
 // var usersRef = ref.orderByChild("/users/");
 // var firebase_init = require('../app.js');
 

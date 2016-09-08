@@ -1,3 +1,2 @@
-require('./log_user_in');
-require('./log_user_out');
-require('./logged_in');
+require('babel-core/register')();
+const server = require('../server/app');

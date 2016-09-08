@@ -1,5 +1,5 @@
 var firebase = require('firebase');
-import { rootRef, firebase_init } from '../firebase_config.js';
+import { rootRef, firebase_init } from './firebase_config.js';
 
 function logUserOut(){
   // todo: delete this code once using server side

@@ -1,5 +1,5 @@
 var firebase = require('firebase');
-import { rootRef, firebase_init } from '../firebase_config.js';
+import { rootRef, firebase_init } from './firebase_config.js';
 console.log('hey');
 
 document.getElementById('signUpButton').onclick = signUserUp
@@ -23,6 +23,17 @@ function signUserUp(){
       console.log(errorMessage);
       })
     };
+
+    function writeUserData(name, useruid, username, gender, liked, not_liked){
+      firebase.database().ref('/users/' + name).set({
+        username: username,
+        name: name,
+        useruid: useruid,
+        gender: gender,
+        liked: 'liked',
+        not_liked: 'liked'
+      });
+    }
 
 function logUserIn(){
   var email = document.getElementById('log_in_username').value;

@@ -1,8 +1,7 @@
 var express = require('express');
 var app = express();
-// var firebase = require('firebase');
 
-app.use('/', express.static('./'))
+app.use('/', express.static('./dist'))
 app.get('/', function (req, res) {
   res.sendFile(__dirname + '/home_page.html');
 });
