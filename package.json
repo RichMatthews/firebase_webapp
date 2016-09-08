@@ -2,11 +2,11 @@
   "name": "webpack_proj",
   "version": "1.0.0",
   "description": "",
-  "main": "js/index.js",
+  "main": "js/client-entry.js",
   "scripts": {
     "build": "webpack",
     "prestart": "npm run build",
-    "start": "node js/index.js"
+    "start": "node js/client-entry.js"
   },
   "author": "",
   "license": "ISC",

@@ -1,10 +1,6 @@
 const path = require('path')
 module.exports = {
-  entry: ["./js/index.js"],
-  node: {
-    fs: "empty", //SHOULD I DO THIS
-    net: "empty" //SHOULD I DO THIS
-  },
+  entry: ["./js/client-entry.js"],
   output: {
     path: path.join(__dirname, '/dist'),
     filename: "bundle.js"
@@ -13,12 +9,10 @@ module.exports = {
       loaders: [
         {
           test: /\.json$/,
-          //exclude: '/node_modules/', //SHOULD I DO THIS
           loader: 'json-loader'
         },
         {
           test: /\.js$/,
-          exclude: /(node_modules|bower_components)/,
           loader: 'babel'
         }
       ]
