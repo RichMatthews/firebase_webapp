@@ -1,0 +1,33 @@
+snapshot
+W {A: P, W: U, g: ye}
+snapshot.val()
+Object {Dave: Object, Mike: Object, Oli: Object, Pete: Object}
+var x = snapshot.val()
+undefined
+x
+Object {Dave: Object, Mike: Object, Oli: Object, Pete: Object}Dave: ObjectMike: ObjectOli: ObjectPete: Object__proto__: Object
+x.length
+undefined
+x.keys()
+VM1994:1 Uncaught TypeError: x.keys is not a function(…)(anonymous function) @ VM1994:1(anonymous function) @ (index):85(anonymous function) @ firebase-database.js:148Ub @ firebase-database.js:44vc @ firebase-database.js:32wc @ firebase-database.js:31h.Hb @ firebase-database.js:216h.wd @ firebase-database.js:193af.wd @ firebase-database.js:96(anonymous function) @ firebase-database.js:94yd @ firebase-database.js:47La.onmessage @ firebase-database.js:46
+x.keys
+undefined
+Object.keys(x)
+["Dave", "Mike", "Oli", "Pete"]
+Object.keys(x).each(function(key) {console.log(x[key]); })
+VM2025:1 Uncaught TypeError: Object.keys(...).each is not a function(…)(anonymous function) @ VM2025:1(anonymous function) @ (index):85(anonymous function) @ firebase-database.js:148Ub @ firebase-database.js:44vc @ firebase-database.js:32wc @ firebase-database.js:31h.Hb @ firebase-database.js:216h.wd @ firebase-database.js:193af.wd @ firebase-database.js:96(anonymous function) @ firebase-database.js:94yd @ firebase-database.js:47La.onmessage @ firebase-database.js:46
+Object.keys(x).map(function(key) {console.log(x[key]); })
+VM2026:1 Object {gender: "male", liked: "liked", name: "Dave", not_liked: "liked", username: "dave@dave.com"…}
+VM2026:1 Object {gender: "male", name: "Mike", username: "rich1@rich.com", useruid: "NaPxY0jz0PYFwLGWeay8jZTkiNJ2"}
+VM2026:1 Object {gender: "male", name: "Oli", username: "o@o.com", useruid: "ZqraJES5TDUdnmp0zd44dBtsQGK2"}
+VM2026:1 Object {gender: "male", name: "Pete", username: "i@i.com", useruid: "JEsxBU7s2NOsaSJos2S5XhZLqSa2"}
+[undefined, undefined, undefined, undefined]
+var arr = []
+undefined
+Object.keys(x).map(function(key) {arr.push(x[key]); })
+[undefined, undefined, undefined, undefined]
+arr
+[Objectgender: "male"liked: "liked"name: "Dave"not_liked: "liked"username: "dave@dave.com"useruid: "2MFVwfXKMjTFj0C95fCYikoRozf1"__proto__: Object, Object, Object, Object]
+2(index):86 4
+(index):86 3
+(index):86 4

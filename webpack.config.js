@@ -1,9 +1,13 @@
 const path = require('path')
 module.exports = {
-  entry: ["./js/client-entry.js"],
+  devtool: 'source-map',
+  entry: {
+    homepage: "./js/client-entry.js",
+    logged_in: "./js/logged-in-entry.js"
+  },
   output: {
     path: path.join(__dirname, '/dist'),
-    filename: "bundle.js"
+    filename: "[name].bundle.js"
   },
     module: {
       loaders: [
@@ -13,7 +17,8 @@ module.exports = {
         },
         {
           test: /\.js$/,
-          loader: 'babel'
+          exclude: /node_modules/,
+          loader: "babel-loader"
         }
       ]
     }
