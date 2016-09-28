@@ -7,5 +7,7 @@ var config = {
 };
 export const firebase_init = firebase.initializeApp(config);
 export const rootRef = firebase.database().ref();
+export const storage = firebase.storage();
+
 
 // document.addEventListener("DOMContentLoaded", false);

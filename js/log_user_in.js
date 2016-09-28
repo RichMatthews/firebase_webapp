@@ -1,5 +1,5 @@
 var firebase = require('firebase');
-import { rootRef, firebase_init } from './firebase_config.js';
+import { rootRef, firebase_init, storage } from './firebase_config.js';
 
 document.getElementById('signUpButton').onclick = signUserUp
 document.getElementById('logInButton').onclick = logUserIn
@@ -12,7 +12,7 @@ function signUserUp(){
   firebase.auth().createUserWithEmailAndPassword(sign_up_username, password).then(
     function(result){
       document.cookie = "useruid=" + result.uid + ";"
-      writeUserData(name, result.uid, sign_up_username, gender)
+      writeUserData(name, result.uid, sign_up_username, gender, 'liked', 'disliked')
       document.location.replace('./logged_in');
     },
     function(error){
@@ -22,14 +22,34 @@ function signUserUp(){
       })
     };
 
-    function writeUserData(name, useruid, username, gender){
+    function writeUserData(name, useruid, username, gender, liked_users, disliked_users){
       firebase.database().ref('/users/' + useruid).set({
         username: username,
         name: name,
         useruid: useruid,
-        gender: gender
+        gender: gender,
+        liked_users: {
+          'likeblank': {
+            name: 'lblank',
+            likedUseruid: 'lblank'
+          }
+        },
+        disliked_users: {
+          'dislikeblank': {
+            name: 'dblank',
+            dislikedUseruid: 'dblank'
+          }
+        }
       });
     }
+
+var uploadImageButton = document.getElementById('uploadImage');
+
+uploadImageButton.addEventListener('change', function(e){
+  var file = e.target.files[0];
+  var storageRef = storage.ref('pictures/' + file.name)
+  var task = storageRef.put(file);
+})
 
 function logUserIn(){
   console.log('i was called');
