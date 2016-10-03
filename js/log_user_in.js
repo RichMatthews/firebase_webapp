@@ -12,7 +12,7 @@ function signUserUp(){
   firebase.auth().createUserWithEmailAndPassword(sign_up_username, password).then(
     function(result){
       document.cookie = "useruid=" + result.uid + ";"
-      writeUserData(name, result.uid, sign_up_username, gender, 'liked', 'disliked')
+      writeUserData(name, result.uid, sign_up_username, gender)
       document.location.replace('./logged_in');
     },
     function(error){
@@ -22,24 +22,12 @@ function signUserUp(){
       })
     };
 
-    function writeUserData(name, useruid, username, gender, liked_users, disliked_users){
+    function writeUserData(name, useruid, username, gender){
       firebase.database().ref('/users/' + useruid).set({
         username: username,
         name: name,
         useruid: useruid,
-        gender: gender,
-        liked_users: {
-          'likeblank': {
-            name: 'lblank',
-            likedUseruid: 'lblank'
-          }
-        },
-        disliked_users: {
-          'dislikeblank': {
-            name: 'dblank',
-            dislikedUseruid: 'dblank'
-          }
-        }
+        gender: gender
       });
     }
 
