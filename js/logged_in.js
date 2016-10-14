@@ -22,16 +22,23 @@ pullAllUsersFromDB()
     addUsersToFutureUsers(users_array, _LOGGED_IN_USER);
     removePastLikedUsersFromFutureUsersArray();
     removePastDisLikedUsersFromFutureUsersArray(users_array);
-    displayMatches();
+    //displayMatches();
     displayNextUser();
+    retrieveMatches();
     //return _USERS;
   })
 
 
 document.getElementById('like').onclick = function(){ return likeButtonClicked(_USERS[0]); }
 document.getElementById('dislike').onclick = function(){ return dislikeButtonClicked(_USERS[0]); }
+// document.getElementById('unMatchButton').onclick = function(){ return unMatch(); }
 //document.getElementById('logOut').onclick = displayRemovedPastUsersFromArray
-document.getElementById('testButton').onclick = displayMatches
+
+function retrieveMatches(){
+  var tableResult = makeHTMLMatchesTable(fetchMatches());
+  var matches = document.getElementById('matches')
+  matches.parentNode.insertBefore(tableResult, matches);
+}
 
 var welcomeUser = document.getElementById('welcome');
 function welcomeTheUser(users_array){
@@ -154,7 +161,7 @@ function liked(useruid, likedUseruid, likedUserName){
 
 function dislikeButtonClicked(user){
   user = _ARRAY_OF_FUTURE_USERS[0];
-  var logged_in_user = _LOGGED_IN_USER[0]
+  var logged_in_user = _LOGGED_IN_USER[0];
     disliked(logged_in_user.useruid, user.useruid, user.name);
     removeDecidedUserFromArray(user.useruid);
     displayNextUser();
@@ -171,6 +178,21 @@ function disliked(useruid, dislikedUseruid, dislikedUserName){
   return firebase.database().ref().update(updates);
 }
 
+function makeAMatch(useruid, likedUseruid){
+  var postData = {
+    likedUseruid: likedUseruid
+  };
+  var postData2 = {
+    likeduseruid: useruid
+  };
+  var newPostKey = firebase.database().ref().child('users').push().key;
+  var updates = {};
+  updates['/users/' + useruid + '/matches/' + likedUseruid] = postData;
+  updates['/users/' + likedUseruid + '/matches/' + useruid] = postData2;
+  console.log(updates, 'updates');
+  return firebase.database().ref().update(updates);
+}
+
 function isItAMatch(logged_in_user, _ARRAY_OF_FUTURE_USERS){
   var viewedUserLikedUsers = firebase.database().ref('users/' + _ARRAY_OF_FUTURE_USERS[0].useruid + '/liked_users');
   var viewedUserLikedUsersArray = [];
@@ -179,19 +201,77 @@ function isItAMatch(logged_in_user, _ARRAY_OF_FUTURE_USERS){
         viewedUserLikedUsersArray.push(key)
       }
     });
-    var isMatch = viewedUserLikedUsersArray.indexOf(logged_in_user);
+    var isMatch = viewedUserLikedUsersArray.indexOf(_LOGGED_IN_USER[0].useruid);
     if (isMatch >=0){
       console.log('is match');
       _MATCHES.push(_ARRAY_OF_FUTURE_USERS[0])
       console.log(_MATCHES, 'array time');
+      makeAMatch(_LOGGED_IN_USER[0].useruid, _ARRAY_OF_FUTURE_USERS[0].useruid)
     }
     else {
       console.log('no match');
     }
 }
 
+function viewingSex(){
+  var chosenSex = 'male';
+  var viewedUserGender = firebase.database().ref('users/' + _ARRAY_OF_FUTURE_USERS[0].useruid + '/gender');
+  viewedUserGender.on('value', function(snapshot) {
+    for (var i=0; i<_ARRAY_OF_FUTURE_USERS.length; i++) {
+      if (chosenSex == snapshot.val()){
+        console.log('here');
+        _ARRAY_OF_FUTURE_USERS.splice(_ARRAY_OF_FUTURE_USERS[i].useruid)
+      }
+      else {
+        console.log('did not work');
+      }
+    }
+  })
+}
 
-function displayMatches(){
+function unMatch(){
+    var unMatchUserViewedByLoggedInUser = firebase.database().ref('users/' + _LOGGED_IN_USER[0].useruid + '/matches/' + 'PHS2DwlCZ0RJaylhJ0FNgEiNLug2');
+    var unMatchLoggedInUser = firebase.database().ref('users/' + 'PHS2DwlCZ0RJaylhJ0FNgEiNLug2' + '/matches/' + _LOGGED_IN_USER[0].useruid);
+    unMatchUserViewedByLoggedInUser.remove();
+    unMatchLoggedInUser.remove();
+};
+
+var displayListOfMatches = document.getElementById('matches');
+function fetchMatches(){
+  var viewMatches = firebase.database().ref('users/' + _LOGGED_IN_USER[0].useruid + '/matches');
+  var viewMatchesArray = [];
+  viewMatches.on('value', function(snapshot) {
+      for (var key in snapshot.val()){
+        viewMatchesArray.push(key)
+      }
+    });
+    return viewMatchesArray;
+  }
+
+
+function makeHTMLMatchesTable(array){
+  var table = document.createElement('table');
+    for (var i = 0; i < array.length; i++) {
+      var row = document.createElement('tr');
+      var cell = document.createElement('td');
+      cell.textContent = array[i];
+      row.appendChild(cell);
+    cell = document.createElement('td');
+      var button = document.createElement('button');
+      button.setAttribute("id", "unMatchButton" +i);
+      cell.appendChild(button);
+      row.appendChild(cell);
+      table.appendChild(row);
+    }
+    return table;
+}
+
+function unMatchButtonClicked(){
+  var button = document.getElementById('unmatch').onclick;
+
+}
+
+
   // var viewedUserLikedUsers = firebase.database().ref('users/' + 'yC4jQuIgZKcU9wS7uo1xdsvruFh2' + '/liked_users');
   // var loggedInLikedUsers = firebase.database().ref('users/' + _LOGGED_IN_USER[0].useruid + '/liked_users');
   // var viewedUserLikedUsersArray = [];
@@ -212,14 +292,14 @@ function displayMatches(){
   //      }
   //   }
   //var a = _.intersection(viewedUserLikedUsersArray, loggedInLikedUsersArray);
-  var displayListOfMatches = document.getElementById('matches');
-  console.log(_MATCHES, 'matches');
-  _MATCHES.forEach(function(entry) {
-    var p = document.createElement("p");
-    p.appendChild(document.createTextNode(entry));
-    displayListOfMatches.appendChild(p);
-  });
-}
+  // console.log(_MATCHES, 'matches');
+  // _MATCHES.forEach(function(entry) {
+  //   var p = document.createElement("p");
+  //   p.appendChild(document.createTextNode(entry));
+  //   displayListOfMatches.appendChild(p);
+  // });
+
+
 
 //
 // function returnAllUsersDetails(){
@@ -266,17 +346,17 @@ function displayMatches(){
 //       return compareUsersLists(users, pastUsers) //returns array of users and array of past users
 //     })
 // }
-
-function logOut(){
-  var cookies = document.cookie.split(";");
-    for (var i = 0; i < cookies.length; i++) {
-    	var cookie = cookies[i];
-    	var eqPos = cookie.indexOf("=");
-    	var name = eqPos > -1 ? cookie.substr(0, eqPos) : cookie;
-    	document.cookie = name + "=;expires=Thu, 01 Jan 1970 00:00:00 GMT";
-    }
-
-  _USERS = [];
-  _LOGGED_IN_USER = [];
-
-}
+//
+// function logOut(){
+//   var cookies = document.cookie.split(";");
+//     for (var i = 0; i < cookies.length; i++) {
+//     	var cookie = cookies[i];
+//     	var eqPos = cookie.indexOf("=");
+//     	var name = eqPos > -1 ? cookie.substr(0, eqPos) : cookie;
+//     	document.cookie = name + "=;expires=Thu, 01 Jan 1970 00:00:00 GMT";
+//     }
+//
+//   _USERS = [];
+//   _LOGGED_IN_USER = [];
+//
+// }

@@ -4,8 +4,10 @@
   "description": "",
   "main": "js/client-entry.js",
   "scripts": {
-    "build": "webpack",
+    "dev": "webpack-dev-server",
     "prestart": "npm run build",
+    "build": "NODE_ENV=production ./node_modules/webpack/bin/webpack.js --config ./webpack.prod.config.js --progress --colors",
+    "watch": "webpack --watch",
     "start": "node server/server-entry.js"
   },
   "author": "",
