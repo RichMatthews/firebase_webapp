@@ -1,7 +1,7 @@
 var firebase = require('firebase');
 // var usersRef = ref.orderByChild("/users/");
 var rootRef = firebase.database().ref();
-user = rootRef.child(getCookie('useruid'))
+user = rootRef.child(getCookie('useruid'));
 
 function getCookie(cname) {
     var name = cname + "=";
@@ -21,17 +21,17 @@ function getCookie(cname) {
 
 function whosignedin(user){
     if (user) {
-      console.log(user + 'signed in')
+      console.log(user + 'signed in');
     } else {
-      console.log('no one signed in')
+      console.log('no one signed in');
     }
 };
 
 submitToDB1.addEventListener('click', function() {
   if(document.getElementById('Hannah').checked){
-    user.set({liked:["Hannah"]})
-    console.log('checked')
+    user.set({liked:["Hannah"]});
+    console.log('checked');
   } else {
-    console.log('not checked')
+    console.log('not checked');
   }
 });

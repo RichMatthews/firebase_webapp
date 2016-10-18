@@ -1,8 +1,8 @@
 var firebase = require('firebase');
 import { rootRef, firebase_init, storage } from './firebase_config.js';
 
-document.getElementById('signUpButton').onclick = signUserUp
-document.getElementById('logInButton').onclick = logUserIn
+document.getElementById('signUpButton').onclick = signUserUp;
+document.getElementById('logInButton').onclick = logUserIn;
 function signUserUp(){
   var sign_up_username = document.getElementById('sign_up_username').value;
   var password = document.getElementById('sign_up_password').value;
@@ -11,15 +11,15 @@ function signUserUp(){
 
   firebase.auth().createUserWithEmailAndPassword(sign_up_username, password).then(
     function(result){
-      document.cookie = "useruid=" + result.uid + ";"
-      writeUserData(name, result.uid, sign_up_username, gender)
+      document.cookie = "useruid=" + result.uid + ";";
+      writeUserData(name, result.uid, sign_up_username, gender);
       document.location.replace('./logged_in');
     },
     function(error){
       var errorCode = error.code;
       var errorMessage = error.message;
       console.log(errorMessage);
-      })
+      });
     };
 
     function writeUserData(name, useruid, username, gender){
@@ -35,9 +35,9 @@ var uploadImageButton = document.getElementById('uploadImage');
 
 uploadImageButton.addEventListener('change', function(e){
   var file = e.target.files[0];
-  var storageRef = storage.ref('pictures/' + file.name)
+  var storageRef = storage.ref('pictures/' + file.name);
   var task = storageRef.put(file);
-})
+});
 
 function logUserIn(){
   console.log('i was called');
@@ -45,14 +45,14 @@ function logUserIn(){
   var password = document.getElementById('log_in_password').value;
   firebase.auth().signInWithEmailAndPassword(email, password).then(
   function(result) {
-    document.cookie = "useruid=" + result.uid + ";"
+    document.cookie = "useruid=" + result.uid + ";";
     document.location.replace('./logged_in');
   },
   function(error) {
     if (error) {
     var errorCode = error.code;
     var errorMessage = error.message;
-    console.log(errorMessage)
+    console.log(errorMessage);
   }
   });
 };

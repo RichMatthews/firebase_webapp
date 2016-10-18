@@ -1,4 +1,4 @@
-const firebase = require('firebase')
+const firebase = require('firebase');
 var config = {
   apiKey: "AIzaSyCowDjjVIdmAf7FZroaeeB1VBgw3Ysodjo",
   authDomain: "my-cool-project-f0ee8.firebaseapp.com",
