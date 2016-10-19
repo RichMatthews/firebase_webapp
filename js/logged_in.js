@@ -14,6 +14,12 @@ const _MATCHES = [];
 
 var DateApp = React.createClass({
 
+  getInitialState: function(){
+    return{
+      all_users: {}
+    }
+  },
+
 
   pullAllUsersFromDB: function(query){
     return new Promise((resolve, reject) => {
@@ -22,9 +28,9 @@ var DateApp = React.createClass({
   },
 
   tempFunction: function(){
-    pullAllUsersFromDB('/users/').then((results) => {
-        this.setState({all_users: results})
-        console.log(results);
+    this.pullAllUsersFromDB('/users/').then((results) => {
+        console.log(results.val());
+        this.setState({all_users: results});
       //   _USERS = users_array;
       //   welcomeTheUser(users_array);
       //   addUsersToFutureUsers(users_array, _LOGGED_IN_USER);
@@ -36,7 +42,6 @@ var DateApp = React.createClass({
       //   //return _USERS;
     })
   },
-
 
   onChildValue: function(rootRef, route) {
      return new Promise(function(resolve, reject){
@@ -292,6 +297,7 @@ render: function() {
       <input type="submit" id="like" value="like" />
       <input type="submit" id="dislike" value="dislike" />
       <input type="submit" id="testButton" value="testButton" onClick={this.tempFunction} />
+      <p> Users: {Object.keys(this.state.all_users).length} </p>
       <input type="submit" id="logOut" value="Log Out" />
       <h3> Matches </h3>
     </div>

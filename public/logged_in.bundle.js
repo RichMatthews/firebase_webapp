@@ -812,6 +812,12 @@
 	  displayName: 'DateApp',
 	
 	
+	  getInitialState: function getInitialState() {
+	    return {
+	      all_users: "init"
+	    };
+	  },
+	
 	  pullAllUsersFromDB: function pullAllUsersFromDB(query) {
 	    return new Promise(function (resolve, reject) {
 	      firebase.database().ref(query).on('value', resolve);
@@ -821,11 +827,9 @@
 	  tempFunction: function tempFunction() {
 	    var _this = this;
 	
-	    var query = '/users/';
-	    var pullAllUsersFromDB = this.pullAllUsersFromDB(query);
-	    pullAllUsersFromDB('/users/').then(function (results) {
+	    this.pullAllUsersFromDB('/users/').then(function (results) {
+	      console.log(results.val());
 	      _this.setState({ all_users: results });
-	      console.log(results);
 	      //   _USERS = users_array;
 	      //   welcomeTheUser(users_array);
 	      //   addUsersToFutureUsers(users_array, _LOGGED_IN_USER);
@@ -1092,6 +1096,13 @@
 	      _react2.default.createElement('input', { type: 'submit', id: 'like', value: 'like' }),
 	      _react2.default.createElement('input', { type: 'submit', id: 'dislike', value: 'dislike' }),
 	      _react2.default.createElement('input', { type: 'submit', id: 'testButton', value: 'testButton', onClick: this.tempFunction }),
+	      _react2.default.createElement(
+	        'p',
+	        null,
+	        ' Users: ',
+	        Object.keys(this.state.all_users).length,
+	        ' '
+	      ),
 	      _react2.default.createElement('input', { type: 'submit', id: 'logOut', value: 'Log Out' }),
 	      _react2.default.createElement(
 	        'h3',
