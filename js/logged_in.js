@@ -4,10 +4,6 @@ import ReactDOM from 'react-dom';
 var firebase = require('firebase');
 var _ = require('lodash');
 
-const _USERS = [];
-const _ARRAY_OF_PAST_USERS = [];
-const _ARRAY_OF_FUTURE_USERS = [];
-const _LOGGED_IN_USER = [];
 const _MATCHES = [];
 //document.getElementById('like').onclick = function(){ return likeButtonClicked(_USERS[0]); }
 //document.getElementById('dislike').onclick = function(){ return dislikeButtonClicked(_USERS[0]); }
@@ -16,7 +12,9 @@ var DateApp = React.createClass({
 
   getInitialState: function(){
     return{
-      all_users: {}
+      all_users: {},
+      past_users: {},
+      future_users: {}
     }
   },
 
@@ -28,33 +26,33 @@ var DateApp = React.createClass({
   },
 
   tempFunction: function(){
-    this.pullAllUsersFromDB('/users/').then((results) => {
-        console.log(results.val());
-        this.setState({all_users: results});
-      //   _USERS = users_array;
-      //   welcomeTheUser(users_array);
-      //   addUsersToFutureUsers(users_array, _LOGGED_IN_USER);
-      //   removePastLikedUsersFromFutureUsersArray();
-      //   removePastDisLikedUsersFromFutureUsersArray(users_array);
-      //   //displayMatches();
-      //   displayNextUser();
-      //   retrieveMatches();
-      //   //return _USERS;
+    this.pullAllUsersFromDB('/users/').then((all_users) => {
+      var users_array = Object.keys(all_users.val()).map(function(key) {
+        return all_users.val()[key];
+      });
+      return users_array;
     })
-  },
-
-  onChildValue: function(rootRef, route) {
-     return new Promise(function(resolve, reject){
-        rootRef.child(route).on('value', resolve);
-     })
-  },
-
-  formatUsers: function(snapshot){
-    var users_object = snapshot.val();
-    var users_array = Object.keys(users_object).map(function(key) {
-      return users_object[key];
+    .then((users_array) => {
+      this.setState({all_users: users_array});
+      this.setState({past_users: []});
+      this.setState({future_users: users_array});
+        var cookie_value = document.cookie.split('=')[1];
+        for (var i = 0; i < users_array.length; i++) {
+          if (users_array[i].useruid == cookie_value){
+            var logged_in_user_object = users_array[i];
+          };
+        };
+        this.welcomeTheUser(this.state.all_users, logged_in_user_object);
+        return this.removePastLikedUsersFromFutureUsersArray(this.state.future_users, logged_in_user_object);
+    }).then((future_users) => {
+      this.setState({future_users: future_users});
+      console.log(this.state.future_users, 'tsf');
     });
-    return users_array; //return is [Object, Object, Object, Object]
+      // removePastDisLikedUsersFromFutureUsersArray(users_array);
+      // //displayMatches();
+      // displayNextUser();
+      // retrieveMatches();
+      // //return _USERS;
   },
 
   retrieveMatches: function(){
@@ -63,40 +61,29 @@ var DateApp = React.createClass({
     matches.parentNode.insertBefore(tableResult, matches);
   },
 
-  welcomeTheUser: function(users_array){
+  welcomeTheUser: function(users_array, logged_in_user_object){
     var welcomeUser = document.getElementById('welcome');
-    var cookie_value = document.cookie.split('=')[1];
-      for (var i = 0; i < _USERS.length; i++) {
-        if (_USERS[i].useruid == cookie_value){
-          var logged_in_user_object = _USERS[i];
-          welcomeUser.innerHTML = "Welcome " + logged_in_user_object.name;
-          _LOGGED_IN_USER.push(logged_in_user_object)
-        }
-      }
+    var users = this.state.all_users;
+    welcomeUser.innerHTML = "Welcome " + logged_in_user_object.name;
+      console.log(users, 'users');
+      console.log(logged_in_user_object, 'lil');
   },
 
-  addUsersToFutureUsers: function(users_array, _LOGGED_IN_USER){
-    for (var i = 0; i < _USERS.length; i++) {
-      if (_USERS[i].useruid != _LOGGED_IN_USER[0].useruid){
-        _ARRAY_OF_FUTURE_USERS.push(_USERS[i]);
-      }
-    }
-  },
-
-  removePastLikedUsersFromFutureUsersArray: function(){
-    var pastLikedUsers = firebase.database().ref('users/' + _LOGGED_IN_USER[0].useruid + '/liked_users');
+  removePastLikedUsersFromFutureUsersArray: function(future_users, logged_in_user_object){
+    var pastLikedUsers = firebase.database().ref('users/' + logged_in_user_object.useruid + '/liked_users');
     var pastLikedUsersArray = [];
       pastLikedUsers.on('value', function(snapshot) {
         for (var key in snapshot.val()){
           pastLikedUsersArray.push(key)
         }
       });
-    for (var i=0; i<_ARRAY_OF_FUTURE_USERS.length; i++) {
-       if (pastLikedUsersArray.indexOf(_ARRAY_OF_FUTURE_USERS[i].useruid) != -1) {
-          _ARRAY_OF_FUTURE_USERS.splice(i, 1);
+    for (var i=0; i<future_users.length; i++) {
+       if (pastLikedUsersArray.indexOf(future_users[i].useruid) != -1) {
+          future_users.splice(i, 1);
           i--;
        }
     }
+    return future_users;
   },
 
  removePastDisLikedUsersFromFutureUsersArray: function(){
@@ -297,7 +284,7 @@ render: function() {
       <input type="submit" id="like" value="like" />
       <input type="submit" id="dislike" value="dislike" />
       <input type="submit" id="testButton" value="testButton" onClick={this.tempFunction} />
-      <p> Users: {Object.keys(this.state.all_users).length} </p>
+      <p> Users </p>
       <input type="submit" id="logOut" value="Log Out" />
       <h3> Matches </h3>
     </div>
