@@ -1,6 +1,7 @@
 import { rootRef, firebase_init } from './firebase_config.js';
 import React from 'react';
 import ReactDOM from 'react-dom';
+//import RemovePastUsers from './removePastUsers'
 var firebase = require('firebase');
 var _ = require('lodash');
 
@@ -14,8 +15,19 @@ var DateApp = React.createClass({
     return{
       all_users: {},
       past_users: {},
-      future_users: {}
+      future_users: [],
+      viewMatchesArray: []
     }
+  },
+
+  componentDidMount: function(){
+
+    // {this.state.future_users.map(function(item){
+    //   return (<div>{item.name}</div>);
+    // })}
+    this.beginFunction();
+
+
   },
 
 
@@ -25,7 +37,7 @@ var DateApp = React.createClass({
       })
   },
 
-  tempFunction: function(){
+  beginFunction: function(){
     this.pullAllUsersFromDB('/users/').then((all_users) => {
       var users_array = Object.keys(all_users.val()).map(function(key) {
         return all_users.val()[key];
@@ -41,66 +53,78 @@ var DateApp = React.createClass({
           if (users_array[i].useruid == cookie_value){
             var logged_in_user_object = users_array[i];
           };
+        }
+        this.setState({loggedInUserObject: logged_in_user_object})
+        if (logged_in_user_object.useruid === cookie_value){
+            var index = this.state.future_users.indexOf(logged_in_user_object)
+            this.state.future_users.splice(index, 1);
         };
-        this.welcomeTheUser(this.state.all_users, logged_in_user_object);
-        return this.removePastLikedUsersFromFutureUsersArray(this.state.future_users, logged_in_user_object);
+        this.welcomeTheUser();
+        this.removePastLikedUsersFromFutureUsersArray();
+        this.removePastDisLikedUsersFromFutureUsersArray();
+        this.fetchMatches();
+        //this.retrieveMatches(logged_in_user_object);
+
     }).then((future_users) => {
       this.setState({future_users: future_users});
-      console.log(this.state.future_users, 'tsf');
     });
       // removePastDisLikedUsersFromFutureUsersArray(users_array);
       // //displayMatches();
       // displayNextUser();
-      // retrieveMatches();
       // //return _USERS;
   },
 
-  retrieveMatches: function(){
-    var tableResult = makeHTMLMatchesTable(fetchMatches());
-    var matches = document.getElementById('matches')
-    matches.parentNode.insertBefore(tableResult, matches);
-  },
 
-  welcomeTheUser: function(users_array, logged_in_user_object){
+  // retrieveMatches: function(logged_in_user_object){
+  //   var tableResult = this.makeHTMLMatchesTable(this.fetchMatches(logged_in_user_object));
+  //   var matches = document.getElementById('matches')
+  //   matches.parentNode.insertBefore(tableResult, matches);
+  // },
+
+  welcomeTheUser: function(logged_in_user_object){
     var welcomeUser = document.getElementById('welcome');
     var users = this.state.all_users;
-    welcomeUser.innerHTML = "Welcome " + logged_in_user_object.name;
-      console.log(users, 'users');
-      console.log(logged_in_user_object, 'lil');
+    var loggedInUser = this.state.loggedInUserObject;
+    welcomeUser.innerHTML = "Welcome " + loggedInUser.name;
   },
 
-  removePastLikedUsersFromFutureUsersArray: function(future_users, logged_in_user_object){
-    var pastLikedUsers = firebase.database().ref('users/' + logged_in_user_object.useruid + '/liked_users');
+  removePastLikedUsersFromFutureUsersArray: function(){
+    var loggedInUser = this.state.loggedInUserObject;
+    var futureUsers = this.state.future_users;
+    var pastLikedUsers = firebase.database().ref('users/' + loggedInUser.useruid + '/liked_users');
     var pastLikedUsersArray = [];
       pastLikedUsers.on('value', function(snapshot) {
         for (var key in snapshot.val()){
           pastLikedUsersArray.push(key)
         }
       });
-    for (var i=0; i<future_users.length; i++) {
-       if (pastLikedUsersArray.indexOf(future_users[i].useruid) != -1) {
-          future_users.splice(i, 1);
+    for (var i=0; i<futureUsers.length; i++) {
+       if (pastLikedUsersArray.indexOf(futureUsers[i].useruid) != -1) {
+          futureUsers.splice(i, 1);
           i--;
        }
     }
-    return future_users;
+    this.setState({future_users: futureUsers})
   },
 
+
  removePastDisLikedUsersFromFutureUsersArray: function(){
-  var pastDisLikedUsers = firebase.database().ref('users/' + _LOGGED_IN_USER[0].useruid + '/disliked_users');
+  var loggedInUser = this.state.loggedInUserObject;
+  var futureUsers = this.state.future_users;
+  var pastDisLikedUsers = firebase.database().ref('users/' + loggedInUser.useruid + '/disliked_users');
   var pastDisLikedUsersArray = [];
   pastDisLikedUsers.on('value', function(snapshot) {
       for (var key in snapshot.val()){
         pastDisLikedUsersArray.push(key)
       }
     });
-  for (var i=0; i<_ARRAY_OF_FUTURE_USERS.length; i++) {
-     if (pastDisLikedUsersArray.indexOf(_ARRAY_OF_FUTURE_USERS[i].useruid) != -1) {
-        _ARRAY_OF_FUTURE_USERS.splice(i, 1);
+  for (var i=0; i<futureUsers.length; i++) {
+     if (pastDisLikedUsersArray.indexOf(futureUsers[i].useruid) != -1) {
+        futureUsers.splice(i, 1);
         i--;
      }
   }
-
+  this.setState({future_users: futureUsers});
 },
 
 removeDecidedUserFromArray: function(user){
@@ -173,7 +197,6 @@ makeAMatch: function(useruid, likedUseruid){
   var updates = {};
   updates['/users/' + useruid + '/matches/' + likedUseruid] = postData;
   updates['/users/' + likedUseruid + '/matches/' + useruid] = postData2;
-  console.log(updates, 'updates');
   return firebase.database().ref().update(updates);
 },
 
@@ -187,14 +210,9 @@ isItAMatch: function(logged_in_user, _ARRAY_OF_FUTURE_USERS){
     });
     var isMatch = viewedUserLikedUsersArray.indexOf(_LOGGED_IN_USER[0].useruid);
     if (isMatch >=0){
-      console.log('is match');
       _MATCHES.push(_ARRAY_OF_FUTURE_USERS[0]);
-      console.log(_MATCHES, 'array time');
       makeAMatch(_LOGGED_IN_USER[0].useruid, _ARRAY_OF_FUTURE_USERS[0].useruid);
       retrieveMatches();
-    }
-    else {
-      console.log('no match');
     }
 },
 
@@ -204,89 +222,80 @@ viewingSex: function(){
   viewedUserGender.on('value', function(snapshot) {
     for (var i=0; i<_ARRAY_OF_FUTURE_USERS.length; i++) {
       if (chosenSex == snapshot.val()){
-        console.log('here');
         _ARRAY_OF_FUTURE_USERS.splice(_ARRAY_OF_FUTURE_USERS[i].useruid)
       }
       else {
-        console.log('did not work');
       }
     }
   })
 },
 
 unMatch: function(){
-    var viewed_user_object = _USERS[0];
-    var unMatchUserViewedByLoggedInUser = firebase.database().ref('users/' + _LOGGED_IN_USER[0].useruid + '/matches/' + viewed_user_object.useruid);
-    var unMatchAndUnlikeUserViewedByLoggedInUser = firebase.database().ref('users/' + _LOGGED_IN_USER[0].useruid + '/liked_users/' + viewed_user_object.useruid);
-    var unMatchLoggedInUser = firebase.database().ref('users/' + viewed_user_object.useruid + '/matches/' + _LOGGED_IN_USER[0].useruid);
-    var unMatchAndUnlikeLoggedInUser = firebase.database().ref('users/' + viewed_user_object.useruid + '/liked_users/' + _LOGGED_IN_USER[0].useruid);
-    unMatchUserViewedByLoggedInUser.remove();
-    unMatchAndUnlikeUserViewedByLoggedInUser.remove();
-    unMatchLoggedInUser.remove();
-    unMatchAndUnlikeLoggedInUser.remove();
+  var loggedInUser = this.state.loggedInUserObject;
+  var viewMatchesArray = this.state.viewMatchesArray;
+  var unMatchUserViewedByLoggedInUser = firebase.database().ref('users/' + loggedInUser.useruid + '/matches/' + 'PHS2DwlCZ0RJaylhJ0FNgEiNLug2');
+  var unMatchAndUnlikeUserViewedByLoggedInUser = firebase.database().ref('users/' + loggedInUser.useruid + '/liked_users/' + 'PHS2DwlCZ0RJaylhJ0FNgEiNLug2');
+  //var unMatchLoggedInUser = firebase.database().ref('users/' + viewed_user_object.useruid + '/matches/' + _LOGGED_IN_USER[0].useruid);
+  //var unMatchAndUnlikeLoggedInUser = firebase.database().ref('users/' + viewed_user_object.useruid + '/liked_users/' + _LOGGED_IN_USER[0].useruid);
+  unMatchUserViewedByLoggedInUser.remove();
+  unMatchAndUnlikeUserViewedByLoggedInUser.remove();
+  //unMatchLoggedInUser.remove();
+  //unMatchAndUnlikeLoggedInUser.remove();
 },
 
 fetchMatches: function(){
+  var loggedInUser = this.state.loggedInUserObject;
   var displayListOfMatches = document.getElementById('matches');
-  var viewMatches = firebase.database().ref('users/' + _LOGGED_IN_USER[0].useruid + '/matches');
+  var viewMatches = firebase.database().ref('users/' + loggedInUser.useruid + '/matches/');
   var viewMatchesArray = [];
   viewMatches.on('value', function(snapshot) {
       for (var key in snapshot.val()){
         viewMatchesArray.push(key)
       }
   });
-  return viewMatchesArray;
-},
-
-
-makeHTMLMatchesTable: function(array){
-  var table = document.createElement('table');
-    for (var i = 0; i < array.length; i++) {
-      var row = document.createElement('tr');
-      var cell = document.createElement('td');
-      cell.textContent = array[i];
-      row.appendChild(cell);
-      cell = document.createElement('td');
-      var unMatchButton = document.createElement('button');
-      var msgButton = document.createElement('button');
-      unMatchButton.setAttribute("id", "unMatchButton" +i);
-      msgButton.setAttribute("id", "msgButton" +i);
-      unMatchButton.textContent = "unmatch";
-      msgButton.textContent = "message";
-      unMatchButton.addEventListener("click", unMatchButtonClicked, false);
-      msgButton.addEventListener("click", messageUser, false);
-      cell.appendChild(unMatchButton);
-      cell.appendChild(msgButton)
-      row.appendChild(cell);
-      table.appendChild(row);
-    }
-    return table;
+  //return viewMatchesArray;
+  this.setState({viewMatchesArray: viewMatchesArray});
 },
 
 unMatchButtonClicked: function(){
-  this.parentNode.parentNode.remove();
-  unMatch();
+  var loggedInUser = this.state.loggedInUserObject;
+  //console.log(logged_in_user_object, 'PP');
+  this.unMatch();
 },
 
 messageUser: function() {
-  document.location.replace('./logged_in/messaging');
+  //document.location.replace('./logged_in/messaging');
+  console.log('messaging hit');
 },
 
-componentDidMount: function(){
 
-},
 render: function() {
+  var fu = [];
+  console.log(this.state.future_users, 'fa');
+  for (var i=0; i<this.state.future_users; i++){
+    fu.push(<span key={i}></span>)
+  }
   return (
     <div className="dateApp">
-      <h1> HELLO </h1>
       <p><span id="users"></span></p>
       <div id="buttons"></div>
+      <p> Users </p>
+      <div>
+        {this.state.future_users}
+      </div>
       <input type="submit" id="like" value="like" />
       <input type="submit" id="dislike" value="dislike" />
-      <input type="submit" id="testButton" value="testButton" onClick={this.tempFunction} />
-      <p> Users </p>
+      <input type="submit" id="testButton" value="testButton" />
       <input type="submit" id="logOut" value="Log Out" />
       <h3> Matches </h3>
+      <table>
+        <tbody>
+          {this.state.viewMatchesArray.map(function(num, index){
+            return <tr key={ index }>{num} <input type="submit" value="unmatch" onClick={() => this.unMatchButtonClicked()} />
+            </tr>;
+          }, this)}
+        </tbody>
+      </table>
     </div>
   );
 }
