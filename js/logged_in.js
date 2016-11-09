@@ -1,13 +1,13 @@
 import { rootRef, firebase_init } from './firebase_config.js';
 import React from 'react';
 import ReactDOM from 'react-dom';
+import './logged_in.scss';
 //import RemovePastUsers from './removePastUsers'
 var firebase = require('firebase');
 var _ = require('lodash');
 
-const _MATCHES = [];
-//document.getElementById('like').onclick = function(){ return likeButtonClicked(_USERS[0]); }
-//document.getElementById('dislike').onclick = function(){ return dislikeButtonClicked(_USERS[0]); }
+// document.getElementById('like').onclick = function(){ return likeButtonClicked(_USERS[0]); }
+// document.getElementById('dislike').onclick = function(){ return dislikeButtonClicked(_USERS[0]); }
 
 var DateApp = React.createClass({
 
@@ -16,7 +16,9 @@ var DateApp = React.createClass({
       all_users: {},
       past_users: {},
       future_users: [],
-      viewMatchesArray: []
+      viewMatchesArray: [],
+      messagesArray : [],
+      likeAndDislikeDisableMent: 'disabled'
     }
   },
 
@@ -59,27 +61,13 @@ var DateApp = React.createClass({
             var index = this.state.future_users.indexOf(logged_in_user_object)
             this.state.future_users.splice(index, 1);
         };
+        this.fetchMatches();
         this.welcomeTheUser();
         this.removePastLikedUsersFromFutureUsersArray();
         this.removePastDisLikedUsersFromFutureUsersArray();
-        this.fetchMatches();
-        //this.retrieveMatches(logged_in_user_object);
-
-    }).then((future_users) => {
-      this.setState({future_users: future_users});
-    });
-      // removePastDisLikedUsersFromFutureUsersArray(users_array);
-      // //displayMatches();
-      // displayNextUser();
-      // //return _USERS;
+        this.retrieveMessages();
+      });
   },
-
-
-  // retrieveMatches: function(logged_in_user_object){
-  //   var tableResult = this.makeHTMLMatchesTable(this.fetchMatches(logged_in_user_object));
-  //   var matches = document.getElementById('matches')
-  //   matches.parentNode.insertBefore(tableResult, matches);
-  // },
 
   welcomeTheUser: function(logged_in_user_object){
     var welcomeUser = document.getElementById('welcome');
@@ -127,18 +115,17 @@ var DateApp = React.createClass({
   this.setState({future_users: futureUsers});
 },
 
-removeDecidedUserFromArray: function(user){
-  _ARRAY_OF_FUTURE_USERS.splice(user, 1)
-  _ARRAY_OF_PAST_USERS.push(user)
+removeDecidedUserFromArray: function(){
+  this.state.future_users.shift();
 },
 
 displayNextUser: function() {
-  var myIndex = 0;
-  var printUser = document.getElementById('displayUsers');
-  if (_ARRAY_OF_FUTURE_USERS.length > 0){
-    printUser.innerHTML = _ARRAY_OF_FUTURE_USERS[0].name
-  }
-  else {
+  // var myIndex = 0;
+  // var printUser = document.getElementById('displayUsers');
+  // if (_ARRAY_OF_FUTURE_USERS.length > 0){
+  //   printUser.innerHTML = _ARRAY_OF_FUTURE_USERS[0].name
+  // }
+  if (this.state.future_users.length > 0) {
     document.getElementById("like").disabled = true;
     document.getElementById("dislike").disabled = true;
     printUser.innerHTML = 'You are out of people';
@@ -147,13 +134,14 @@ displayNextUser: function() {
 
 
 
-likeButtonClicked: function(user, users_array){
-  user = _ARRAY_OF_FUTURE_USERS[0];
-  var logged_in_user = _LOGGED_IN_USER[0]
-    liked(logged_in_user.useruid, user.useruid, user.name);
-    isItAMatch(logged_in_user.useruid, _ARRAY_OF_FUTURE_USERS);
-    removeDecidedUserFromArray(user.useruid);
-    displayNextUser();
+likeButtonClicked: function(){
+  var loggedInUser = this.state.loggedInUserObject;
+  var futureUsers = this.state.future_users;
+  var futureUserBeingViewed = this.state.future_users[0];
+  this.liked(loggedInUser.useruid, futureUserBeingViewed.useruid, futureUserBeingViewed.name);
+  this.isItAMatch();
+  this.removePastLikedUsersFromFutureUsersArray();
+  this.removePastDisLikedUsersFromFutureUsersArray();
 },
 
  liked: function(useruid, likedUseruid, likedUserName){
@@ -186,12 +174,15 @@ likeButtonClicked: function(user, users_array){
   return firebase.database().ref().update(updates);
 },
 
-makeAMatch: function(useruid, likedUseruid){
+makeAMatch: function(useruid, likedUseruid, likedUserName){
+  console.log('here');
   var postData = {
-    likedUseruid: likedUseruid
+    likedUseruid: likedUseruid,
+    likedUserName: likedUserName
   };
   var postData2 = {
-    likeduseruid: useruid
+    likeduseruid: useruid,
+    likedUserName: likedUserName
   };
   var newPostKey = firebase.database().ref().child('users').push().key;
   var updates = {};
@@ -200,27 +191,27 @@ makeAMatch: function(useruid, likedUseruid){
   return firebase.database().ref().update(updates);
 },
 
-isItAMatch: function(logged_in_user, _ARRAY_OF_FUTURE_USERS){
-  var viewedUserLikedUsers = firebase.database().ref('users/' + _ARRAY_OF_FUTURE_USERS[0].useruid + '/liked_users');
+isItAMatch: function(){
+  var loggedInUser = this.state.loggedInUserObject;
+  var viewedUserLikedUsers = firebase.database().ref('users/' + this.state.future_users[0].useruid + '/liked_users');
   var viewedUserLikedUsersArray = [];
   viewedUserLikedUsers.on('value', function(snapshot) {
       for (var key in snapshot.val()){
         viewedUserLikedUsersArray.push(key)
       }
     });
-    var isMatch = viewedUserLikedUsersArray.indexOf(_LOGGED_IN_USER[0].useruid);
+    var isMatch = viewedUserLikedUsersArray.indexOf(loggedInUser.useruid);
     if (isMatch >=0){
-      _MATCHES.push(_ARRAY_OF_FUTURE_USERS[0]);
-      makeAMatch(_LOGGED_IN_USER[0].useruid, _ARRAY_OF_FUTURE_USERS[0].useruid);
-      retrieveMatches();
+      //_MATCHES.push(this.state.future_users[0]);
+      this.makeAMatch(loggedInUser.useruid, this.state.future_users[0].useruid, this.state.future_users[0].name);
     }
 },
 
 viewingSex: function(){
   var chosenSex = 'male';
-  var viewedUserGender = firebase.database().ref('users/' + _ARRAY_OF_FUTURE_USERS[0].useruid + '/gender');
+  var viewedUserGender = firebase.database().ref('users/' + this.state.future_users[0].useruid + '/gender');
   viewedUserGender.on('value', function(snapshot) {
-    for (var i=0; i<_ARRAY_OF_FUTURE_USERS.length; i++) {
+    for (var i=0; i<this.state.future_users.length; i++) {
       if (chosenSex == snapshot.val()){
         _ARRAY_OF_FUTURE_USERS.splice(_ARRAY_OF_FUTURE_USERS[i].useruid)
       }
@@ -241,6 +232,7 @@ unMatch: function(){
   unMatchAndUnlikeUserViewedByLoggedInUser.remove();
   //unMatchLoggedInUser.remove();
   //unMatchAndUnlikeLoggedInUser.remove();
+  this.fetchMatches();
 },
 
 fetchMatches: function(){
@@ -253,49 +245,117 @@ fetchMatches: function(){
         viewMatchesArray.push(key)
       }
   });
-  //return viewMatchesArray;
   this.setState({viewMatchesArray: viewMatchesArray});
 },
 
 unMatchButtonClicked: function(){
   var loggedInUser = this.state.loggedInUserObject;
-  //console.log(logged_in_user_object, 'PP');
-  this.unMatch();
+  console.log(loggedInUser);
+  //this.unMatch();
 },
 
 messageUser: function() {
   //document.location.replace('./logged_in/messaging');
   console.log('messaging hit');
+  // {this.state.future_users.map(function(user, index){
+  //   return <p key={ index }>{user.name} </p>;
+  // }, this)}
 },
 
+displayUser : function(){
+  if (this.state.future_users[0]){
+    return this.state.future_users[0].name;
+  }
+  else{
+    //this.setState({likeAndDislikeDisableMent: ''})
+    return 'You are out of people';
+  }
+},
+
+sendMessage: function(senderUseruid, senderName, receiverUseruid, receiverName, messageBody){
+  var postData = {
+    receiverUseruid: receiverUseruid,
+    receiverName: receiverName,
+    messageBody: messageBody
+  };
+  var postData2 = {
+    senderUseruid: senderUseruid,
+    senderName: senderName,
+    messageBody: messageBody
+  };
+  var newPostKey = firebase.database().ref().child('users').push().key;
+  var updates = {};
+  updates['/users/' + senderUseruid + '/messages/' + receiverUseruid] = postData;
+  updates['/users/' + receiverUseruid + '/messages/' + senderUseruid] = postData2;
+  return firebase.database().ref().update(updates);
+},
+
+sendMessageButtonClicked: function(){
+  var loggedInUser = this.state.loggedInUserObject;
+  var databaseRefSender = firebase.database().ref().child('users/' + loggedInUser.useruid + '/messages/');
+  var databaseRefReceiver = firebase.database().ref().child('users/' + 'PHS2DwlCZ0RJaylhJ0FNgEiNLug2' + '/messages/');
+  var messageBodyValue = document.getElementById('message').value;
+  var senderChat = {name: loggedInUser.name, message: messageBodyValue}
+  databaseRefSender.push(senderChat);
+  databaseRefReceiver.push(senderChat);
+  this.retrieveMessages();
+
+  // databaseRef.on('child_added', function(snapshot){
+  // })
+    // var messageElement = document.createTextNode(messageBodyValue);
+    // var chat = snapshot.val();
+    // var msg = document.getElementById('msgs');
+    // //messageBodyValue.id = snapshot.key;
+    // //this.sendMessage(loggedInUser.useruid, loggedInUser.name, 'PHS2DwlCZ0RJaylhJ0FNgEiNLug2', 'Lucy', chat.messageBodyValue);
+    // //this.sendMessage(chat.messageBodyValue);
+    // msg.appendChild(messageElement);
+},
+
+pullMessagesFromDB: function(query){
+  return new Promise((resolve, reject) => {
+      firebase.database().ref(query).on('value', resolve);
+    })
+},
+
+retrieveMessages: function(){
+  var loggedInUser = this.state.loggedInUserObject;
+  this.pullMessagesFromDB('/users/' + loggedInUser.useruid + '/messages/').then((all_messages) => {
+    var messagesArray = Object.keys(all_messages.val()).map(function(key) {
+      return all_messages.val()[key];
+    });
+    this.setState({messagesArray: messagesArray});
+  })
+},
 
 render: function() {
-  var fu = [];
-  console.log(this.state.future_users, 'fa');
-  for (var i=0; i<this.state.future_users; i++){
-    fu.push(<span key={i}></span>)
-  }
   return (
     <div className="dateApp">
       <p><span id="users"></span></p>
       <div id="buttons"></div>
       <p> Users </p>
-      <div>
-        {this.state.future_users}
-      </div>
-      <input type="submit" id="like" value="like" />
-      <input type="submit" id="dislike" value="dislike" />
+      <p> {this.displayUser()} </p>
+      <input type="submit" id="like" disabled={this.state.likeAndDislikeDisableMent.length < 0} value="like" onClick={() => this.likeButtonClicked()}/>
+      <input type="submit" id="dislike" disabled={this.state.likeAndDislikeDisableMent.length < 0} value="dislike" onClick={() => this.dislikeButtonClicked()}/>
       <input type="submit" id="testButton" value="testButton" />
       <input type="submit" id="logOut" value="Log Out" />
       <h3> Matches </h3>
       <table>
         <tbody>
           {this.state.viewMatchesArray.map(function(num, index){
-            return <tr key={ index }>{num} <input type="submit" value="unmatch" onClick={() => this.unMatchButtonClicked()} />
+            return <tr key={ index }>{num}
+            <input type="submit" value="unmatch" onClick={() => this.unMatchButtonClicked()}/>
+            <input type="submit" value="message" onClick={() => this.messageUser()}/>
             </tr>;
           }, this)}
         </tbody>
       </table>
+      <input type="text" id="message"/>
+      <input type="submit" id="message" onClick={() => this.sendMessageButtonClicked()}/>
+      <p id='msgs'>
+        {this.state.messagesArray.map(function(num, index){
+          return <p key={ index }>{num.name + ' '}{num.message}</p>;
+        }, this)}
+      </p>
     </div>
   );
 }
