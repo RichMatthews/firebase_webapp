@@ -1,3 +1,16 @@
 table {
-  border: 1px solid black;
+  border-collapse:separate;
+  border-spacing:10px;
+};
+
+tr {
+  outline: thin solid black;
+  padding: 5px;
+  margin: 5px;
+};
+
+tr.highlight {
+  border-top: 10px solid;
+  border-bottom: 10px solid;
+  border-color: transparent;
 }

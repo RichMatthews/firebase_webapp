@@ -2,12 +2,10 @@ import { rootRef, firebase_init } from './firebase_config.js';
 import React from 'react';
 import ReactDOM from 'react-dom';
 import './logged_in.scss';
-//import RemovePastUsers from './removePastUsers'
+//import removePastLikedUsersFromFutureUsersArray from './removePastLikedUsers';
+//import removePastDisLikedUsersFromFutureUsersArray from './removePastDislikedUsers';
 var firebase = require('firebase');
 var _ = require('lodash');
-
-// document.getElementById('like').onclick = function(){ return likeButtonClicked(_USERS[0]); }
-// document.getElementById('dislike').onclick = function(){ return dislikeButtonClicked(_USERS[0]); }
 
 var DateApp = React.createClass({
 
@@ -16,20 +14,16 @@ var DateApp = React.createClass({
       all_users: {},
       past_users: {},
       future_users: [],
-      viewMatchesArray: [],
+      matchesArray: [],
       messagesArray : [],
-      likeAndDislikeDisableMent: 'disabled'
+      messagingUseruid: '',
+      likeAndDislikeDisableMent: 'disabled',
+      messaging: false
     }
   },
 
   componentDidMount: function(){
-
-    // {this.state.future_users.map(function(item){
-    //   return (<div>{item.name}</div>);
-    // })}
     this.beginFunction();
-
-
   },
 
 
@@ -53,12 +47,12 @@ var DateApp = React.createClass({
         var cookie_value = document.cookie.split('=')[1];
         for (var i = 0; i < users_array.length; i++) {
           if (users_array[i].useruid == cookie_value){
-            var logged_in_user_object = users_array[i];
+            var loggedInUserObject = users_array[i];
           };
         }
-        this.setState({loggedInUserObject: logged_in_user_object})
-        if (logged_in_user_object.useruid === cookie_value){
-            var index = this.state.future_users.indexOf(logged_in_user_object)
+        this.setState({loggedInUserObject: loggedInUserObject})
+        if (loggedInUserObject.useruid === cookie_value){
+            var index = this.state.future_users.indexOf(loggedInUserObject)
             this.state.future_users.splice(index, 1);
         };
         this.fetchMatches();
@@ -69,11 +63,21 @@ var DateApp = React.createClass({
       });
   },
 
-  welcomeTheUser: function(logged_in_user_object){
+  welcomeTheUser: function(loggedInUserObject){
     var welcomeUser = document.getElementById('welcome');
     var users = this.state.all_users;
     var loggedInUser = this.state.loggedInUserObject;
     welcomeUser.innerHTML = "Welcome " + loggedInUser.name;
+  },
+
+  uploadImage: function(){
+    var uploadImageButton = document.getElementById('uploadImage');
+
+    uploadImageButton.addEventListener('change', function(e){
+      var file = e.target.files[0];
+      var storageRef = storage.ref('pictures/' + file.name);
+      var task = storageRef.put(file);
+    });
   },
 
   removePastLikedUsersFromFutureUsersArray: function(){
@@ -115,25 +119,6 @@ var DateApp = React.createClass({
   this.setState({future_users: futureUsers});
 },
 
-removeDecidedUserFromArray: function(){
-  this.state.future_users.shift();
-},
-
-displayNextUser: function() {
-  // var myIndex = 0;
-  // var printUser = document.getElementById('displayUsers');
-  // if (_ARRAY_OF_FUTURE_USERS.length > 0){
-  //   printUser.innerHTML = _ARRAY_OF_FUTURE_USERS[0].name
-  // }
-  if (this.state.future_users.length > 0) {
-    document.getElementById("like").disabled = true;
-    document.getElementById("dislike").disabled = true;
-    printUser.innerHTML = 'You are out of people';
-  }
-},
-
-
-
 likeButtonClicked: function(){
   var loggedInUser = this.state.loggedInUserObject;
   var futureUsers = this.state.future_users;
@@ -142,6 +127,7 @@ likeButtonClicked: function(){
   this.isItAMatch();
   this.removePastLikedUsersFromFutureUsersArray();
   this.removePastDisLikedUsersFromFutureUsersArray();
+  this.fetchMatches();
 },
 
  liked: function(useruid, likedUseruid, likedUserName){
@@ -155,12 +141,14 @@ likeButtonClicked: function(){
   return firebase.database().ref().update(updates);
 },
 
- dislikeButtonClicked: function(user){
-  user = _ARRAY_OF_FUTURE_USERS[0];
-  var logged_in_user = _LOGGED_IN_USER[0];
-    disliked(logged_in_user.useruid, user.useruid, user.name);
-    removeDecidedUserFromArray(user.useruid);
-    displayNextUser();
+ dislikeButtonClicked: function(){
+   var loggedInUser = this.state.loggedInUserObject;
+   var futureUsers = this.state.future_users;
+   var futureUserBeingViewed = this.state.future_users[0];
+   this.disliked(loggedInUser.useruid, futureUserBeingViewed.useruid, futureUserBeingViewed.name);
+   this.removePastLikedUsersFromFutureUsersArray();
+   this.removePastDisLikedUsersFromFutureUsersArray();
+   this.fetchMatches();
 },
 
  disliked: function(useruid, dislikedUseruid, dislikedUserName){
@@ -174,15 +162,14 @@ likeButtonClicked: function(){
   return firebase.database().ref().update(updates);
 },
 
-makeAMatch: function(useruid, likedUseruid, likedUserName){
-  console.log('here');
+makeAMatch: function(useruid, username, likedUseruid, likedUserName){
   var postData = {
     likedUseruid: likedUseruid,
     likedUserName: likedUserName
   };
   var postData2 = {
-    likeduseruid: useruid,
-    likedUserName: likedUserName
+    likedUseruid: useruid,
+    likedUserName: username
   };
   var newPostKey = firebase.database().ref().child('users').push().key;
   var updates = {};
@@ -202,8 +189,7 @@ isItAMatch: function(){
     });
     var isMatch = viewedUserLikedUsersArray.indexOf(loggedInUser.useruid);
     if (isMatch >=0){
-      //_MATCHES.push(this.state.future_users[0]);
-      this.makeAMatch(loggedInUser.useruid, this.state.future_users[0].useruid, this.state.future_users[0].name);
+      this.makeAMatch(loggedInUser.useruid, loggedInUser.name, this.state.future_users[0].useruid, this.state.future_users[0].name);
     }
 },
 
@@ -221,37 +207,38 @@ viewingSex: function(){
   })
 },
 
-unMatch: function(){
+unMatch: function(viewedUseruid){
   var loggedInUser = this.state.loggedInUserObject;
-  var viewMatchesArray = this.state.viewMatchesArray;
-  var unMatchUserViewedByLoggedInUser = firebase.database().ref('users/' + loggedInUser.useruid + '/matches/' + 'PHS2DwlCZ0RJaylhJ0FNgEiNLug2');
-  var unMatchAndUnlikeUserViewedByLoggedInUser = firebase.database().ref('users/' + loggedInUser.useruid + '/liked_users/' + 'PHS2DwlCZ0RJaylhJ0FNgEiNLug2');
-  //var unMatchLoggedInUser = firebase.database().ref('users/' + viewed_user_object.useruid + '/matches/' + _LOGGED_IN_USER[0].useruid);
-  //var unMatchAndUnlikeLoggedInUser = firebase.database().ref('users/' + viewed_user_object.useruid + '/liked_users/' + _LOGGED_IN_USER[0].useruid);
+  var unMatchUserViewedByLoggedInUser = firebase.database().ref('users/' + loggedInUser.useruid + '/matches/' + viewedUseruid);
+  var unMatchAndUnlikeUserViewedByLoggedInUser = firebase.database().ref('users/' + loggedInUser.useruid + '/liked_users/' + viewedUseruid);
+  var unMatchLoggedInUser = firebase.database().ref('users/' + viewedUseruid + '/matches/' + loggedInUser.useruid);
+  var unMatchAndUnlikeLoggedInUser = firebase.database().ref('users/' + viewedUseruid + '/liked_users/' + loggedInUser.useruid);
   unMatchUserViewedByLoggedInUser.remove();
   unMatchAndUnlikeUserViewedByLoggedInUser.remove();
-  //unMatchLoggedInUser.remove();
-  //unMatchAndUnlikeLoggedInUser.remove();
+  unMatchLoggedInUser.remove();
+  unMatchAndUnlikeLoggedInUser.remove();
   this.fetchMatches();
+},
+
+pullMatchesFromDB: function(query){
+  return new Promise((resolve, reject) => {
+      firebase.database().ref(query).on('value', resolve);
+    })
 },
 
 fetchMatches: function(){
   var loggedInUser = this.state.loggedInUserObject;
-  var displayListOfMatches = document.getElementById('matches');
-  var viewMatches = firebase.database().ref('users/' + loggedInUser.useruid + '/matches/');
-  var viewMatchesArray = [];
-  viewMatches.on('value', function(snapshot) {
-      for (var key in snapshot.val()){
-        viewMatchesArray.push(key)
-      }
-  });
-  this.setState({viewMatchesArray: viewMatchesArray});
+  this.pullMatchesFromDB('/users/' + loggedInUser.useruid + '/matches/').then((all_matches) => {
+    var matchesArray = Object.keys(all_matches.val()).map(function(key) {
+      return all_matches.val()[key];
+    });
+    this.setState({matchesArray: matchesArray});
+  })
 },
 
-unMatchButtonClicked: function(){
+unMatchButtonClicked: function(useruid){
   var loggedInUser = this.state.loggedInUserObject;
-  console.log(loggedInUser);
-  //this.unMatch();
+  this.unMatch(useruid);
 },
 
 messageUser: function() {
@@ -290,25 +277,16 @@ sendMessage: function(senderUseruid, senderName, receiverUseruid, receiverName, 
   return firebase.database().ref().update(updates);
 },
 
-sendMessageButtonClicked: function(){
+sendMessageButtonClicked: function(viewedUseruid){
+  console.log(viewedUseruid, '-++-');
   var loggedInUser = this.state.loggedInUserObject;
-  var databaseRefSender = firebase.database().ref().child('users/' + loggedInUser.useruid + '/messages/');
-  var databaseRefReceiver = firebase.database().ref().child('users/' + 'PHS2DwlCZ0RJaylhJ0FNgEiNLug2' + '/messages/');
+  var databaseRefSender = firebase.database().ref().child('users/' + loggedInUser.useruid + '/messages/' + viewedUseruid);
+  var databaseRefReceiver = firebase.database().ref().child('users/' + viewedUseruid + '/messages/' + loggedInUser.useruid);
   var messageBodyValue = document.getElementById('message').value;
   var senderChat = {name: loggedInUser.name, message: messageBodyValue}
   databaseRefSender.push(senderChat);
   databaseRefReceiver.push(senderChat);
   this.retrieveMessages();
-
-  // databaseRef.on('child_added', function(snapshot){
-  // })
-    // var messageElement = document.createTextNode(messageBodyValue);
-    // var chat = snapshot.val();
-    // var msg = document.getElementById('msgs');
-    // //messageBodyValue.id = snapshot.key;
-    // //this.sendMessage(loggedInUser.useruid, loggedInUser.name, 'PHS2DwlCZ0RJaylhJ0FNgEiNLug2', 'Lucy', chat.messageBodyValue);
-    // //this.sendMessage(chat.messageBodyValue);
-    // msg.appendChild(messageElement);
 },
 
 pullMessagesFromDB: function(query){
@@ -327,6 +305,16 @@ retrieveMessages: function(){
   })
 },
 
+handleUseruidValue: function(uid){
+    this.setState({uid: uid})
+  },
+
+onClick: function(uid) {
+  this.setState({ messaging: true });
+  this.setState({ uid: uid });
+},
+
+
 render: function() {
   return (
     <div className="dateApp">
@@ -334,33 +322,98 @@ render: function() {
       <div id="buttons"></div>
       <p> Users </p>
       <p> {this.displayUser()} </p>
-      <input type="submit" id="like" disabled={this.state.likeAndDislikeDisableMent.length < 0} value="like" onClick={() => this.likeButtonClicked()}/>
-      <input type="submit" id="dislike" disabled={this.state.likeAndDislikeDisableMent.length < 0} value="dislike" onClick={() => this.dislikeButtonClicked()}/>
-      <input type="submit" id="testButton" value="testButton" />
+      <input type="submit" id="like" disabled={this.state.likeAndDislikeDisableMent.length < 0} value="like" onClick={() => this.likeButtonClicked(this.removePastLikedUsersFromFutureUsersArray, this.removePastDisLikedUsersFromFutureUsersArray)}/>
+      <input type="submit" id="dislike" disabled={this.state.likeAndDislikeDisableMent.length < 0} value="dislike" onClick={() => this.dislikeButtonClicked(this.removePastLikedUsersFromFutureUsersArray, this.removePastDisLikedUsersFromFutureUsersArray)}/>
+      <input type="submit" id="testButton" value="testButton" onClick={this.onClick} />
+      <input type="submit" id="femaleOnly" value="femaly only" onClick={this.onClick} />
       <input type="submit" id="logOut" value="Log Out" />
-      <h3> Matches </h3>
-      <table>
-        <tbody>
-          {this.state.viewMatchesArray.map(function(num, index){
-            return <tr key={ index }>{num}
-            <input type="submit" value="unmatch" onClick={() => this.unMatchButtonClicked()}/>
-            <input type="submit" value="message" onClick={() => this.messageUser()}/>
-            </tr>;
-          }, this)}
-        </tbody>
-      </table>
-      <input type="text" id="message"/>
-      <input type="submit" id="message" onClick={() => this.sendMessageButtonClicked()}/>
-      <p id='msgs'>
-        {this.state.messagesArray.map(function(num, index){
-          return <p key={ index }>{num.name + ' '}{num.message}</p>;
-        }, this)}
-      </p>
+      <form onSubmit={this.uploadImage}>
+        <input type="file" id="uploadImage" value="Select Image" />
+      </form>
+      {
+        this.state.messaging
+        ? <Messaging uid={this.state.uid} loggedInUserProp={this.state.loggedInUserObject}/>
+        :
+        <div>
+          <h3> Matches </h3>
+            <table>
+              <tbody>
+                {this.state.matchesArray.map(function(num, index){
+                  return <tr key={ index }>{num.likedUserName}
+                  <input type="submit" value="Unmatch User" onClick={() => this.unMatchButtonClicked(num.likedUseruid)}/>
+                  <input type="submit" value="Message User" onClick={() => this.onClick(num.likedUseruid)}/>
+                  <input type="submit" id="message" onClick={() => this.sendMessageButtonClicked(this.state.uid)}/>
+                  </tr>;
+                }, this)}
+              </tbody>
+            </table>
+        </div>
+      }
     </div>
   );
 }
 });
 
+var Messaging = React.createClass({
+
+  getInitialState: function(){
+    return{
+      messagesArray : []
+    }
+  },
+
+  componentDidMount: function(){
+    this.retrieveMessages();
+  },
+
+  sendMessageButtonClicked: function(viewedUseruid){
+    console.log(viewedUseruid, '-++-');
+    var loggedInUser = this.props.loggedInUserProp;
+    console.log(loggedInUser, 'liu');
+    var databaseRefSender = firebase.database().ref().child('users/' + loggedInUser.useruid + '/messages/' + viewedUseruid);
+    var databaseRefReceiver = firebase.database().ref().child('users/' + viewedUseruid + '/messages/' + loggedInUser.useruid);
+    var messageBodyValue = document.getElementById('messsageText').value;
+    var senderChat = {name: loggedInUser.name, message: messageBodyValue}
+    databaseRefSender.push(senderChat);
+    databaseRefReceiver.push(senderChat);
+    this.retrieveMessages();
+  },
+
+  pullMessagesFromDB: function(query){
+    return new Promise((resolve, reject) => {
+        firebase.database().ref(query).on('value', resolve);
+      })
+  },
+
+  retrieveMessages: function(){
+    let loggedInUser = this.props.loggedInUserProp;
+    let viewedUseruid = this.props.uid;
+    this.pullMessagesFromDB('/users/' + loggedInUser.useruid + '/messages/' + viewedUseruid).then((all_messages) => {
+      var messagesArray = Object.keys(all_messages.val()).map(function(key) {
+        return all_messages.val()[key];
+      });
+      this.setState({messagesArray: messagesArray});
+    })
+  },
+
+  render: function(){
+    return (
+      <div>
+          <h3>You are messaging {this.props.uid}</h3>
+          <div>
+            <p id='msgs'>
+              {this.state.messagesArray.map(function(num, index){
+                return <p key={ index }>{num.name}: {num.message}</p>;
+              }, this)}
+            </p>
+            <input type="text" id="messsageText"/>
+            <input type="submit" value="Send" onClick={() => this.sendMessageButtonClicked(this.props.uid)}/>
+          </div>
+      </div>
+    )
+  }
+
+});
 ReactDOM.render(
   <DateApp />, document.getElementById('content')
 );
